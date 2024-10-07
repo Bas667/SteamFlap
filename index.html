@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Flappy Bird Game</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #000;
+        }
+        #game-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+        #restart-button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 10px 20px;
+            font-size: 24px;
+            background-color: #ff0000;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <button id="restart-button">Neu Start</button>
+    </div>
+    <script>
+        // JavaScript Code for Flappy Bird Game in Phaser 3
+        const config = {
+            type: Phaser.AUTO,
+            width: window.innerWidth,
+            height: window.innerHeight,
+            physics: {
+                default: 'arcade',
+                arcade: {
+                    gravity: { y: 500 },
+                    debug: false
+                }
+            },
+            scene: {
+                preload: preload,
+                create: create,
+                update: update
+            },
+            parent: 'game-container'
+        };
+
+        const game = new Phaser.Game(config);
+
+        let bird;
+        let pipes;
+        let score = 0;
+        let scoreText;
+        let restartButton = document.getElementById('restart-button');
+
+        restartButton.addEventListener('click', () => {
+            game.scene.stop('default'); game.scene.start('default');
+            score = 0;
+            restartButton.style.display = 'none';
+        });
+
+        function preload() {
+            // Load assets
+            this.load.image('background', 'assets/background.png');
+            this.load.image('bird', 'assets/blimp1.png');
+            this.load.image('pipeTop', 'assets/pipe_bottom.png'); // Different image for top pipe
+            this.load.image('pipeBottom', 'assets/pipe_top.png'); // Different image for bottom pipe
+            this.load.image('pipeBody', 'assets/pipe_body.png'); // Pipe body image
+        }
+
+        function create() {
+            // Add background
+            this.add.image(window.innerWidth / 2, window.innerHeight / 2, 'background').setDisplaySize(window.innerWidth, window.innerHeight);
+
+            // Add bird
+            bird = this.physics.add.sprite(50, window.innerHeight / 2, 'bird').setScale(0.5);
+            bird.setCollideWorldBounds(true);
+            bird.body.setSize(bird.width * 0.7, bird.height * 0.7); // Reduce collider size
+
+            // Add pipes group
+            pipes = this.physics.add.group();
+
+            // Add score text (always on top)
+            scoreText = this.add.text(16, 16, 'Score: 0', { fontSize: '32px', fill: '#fff' }).setDepth(1);
+
+            // Add controls
+            this.input.on('pointerdown', flap);
+
+            // Add pipe generator
+            this.time.addEvent({
+                delay: 1500,
+                callback: addPipePair,
+                callbackScope: this,
+                loop: true
+            });
+
+            // Bird collision with pipes
+            this.physics.add.collider(bird, pipes, hitPipe, null, this);
+        }
+
+        function update() {
+            // Rotate bird slightly downward
+            if (bird.angle < 20) {
+                bird.angle += 1;
+            }
+
+            // Check if bird has passed a pipe pair and update score
+            pipes.getChildren().forEach(function(pipe) {
+                if (!pipe.scored && pipe.x + pipe.width < bird.x) {
+                    pipe.scored = true;
+                    if (pipe.isBottom) {
+                        score += 1;
+                        scoreText.setText('Score: ' + score);
+                    }
+                }
+            });
+        }
+
+        function flap() {
+            bird.setVelocityY(-300);
+            bird.angle = -20;
+        }
+
+        function addPipePair() {
+            const gap = Phaser.Math.Between(150, window.innerHeight - 150);
+            const gapSize = 180;
+
+            // Add top pipe
+            const topPipe = pipes.create(window.innerWidth, gap - gapSize / 2, 'pipeTop');
+            topPipe.setOrigin(0, 1);
+            topPipe.body.immovable = true;
+            topPipe.body.allowGravity = false;
+            topPipe.isBottom = false;
+            topPipe.body.setSize(topPipe.width * 0.4, topPipe.height, true); // Reduce collider size
+
+            // Add top pipe body extending to the top of the screen
+            const topPipeBodyHeight = gap - gapSize / 2;
+            for (let i = topPipeBodyHeight - 50; i > 0; i -= 50) {
+                const pipeBody = pipes.create(window.innerWidth, i, 'pipeBody');
+                pipeBody.setOrigin(0, 1);
+                pipeBody.body.immovable = true;
+                pipeBody.body.allowGravity = false;
+                pipeBody.isBottom = false;
+                pipeBody.body.setSize(pipeBody.width * 0.8, pipeBody.height * 0.9, true); // Reduce collider size
+            }
+
+            // Add bottom pipe
+            const bottomPipe = pipes.create(window.innerWidth, gap + gapSize / 2, 'pipeBottom');
+            bottomPipe.setOrigin(0, 0);
+            bottomPipe.body.immovable = true;
+            bottomPipe.body.allowGravity = false;
+            bottomPipe.isBottom = true;
+            bottomPipe.body.setSize(bottomPipe.width * 0.4, bottomPipe.height, true); // Reduce collider size
+            bottomPipe.scored = false;
+
+            // Add bottom pipe body extending to the bottom of the screen
+            const bottomPipeBodyStart = gap + gapSize / 2 + 50;
+            for (let i = bottomPipeBodyStart; i < window.innerHeight; i += 50) {
+                const pipeBody = pipes.create(window.innerWidth, i, 'pipeBody');
+                pipeBody.setOrigin(0, 0);
+                pipeBody.body.immovable = true;
+                pipeBody.body.allowGravity = false;
+                pipeBody.isBottom = true;
+                pipeBody.body.setSize(pipeBody.width * 0.8, pipeBody.height * 0.9, true); // Reduce collider size
+            }
+
+            // Move pipes to the left
+            Phaser.Actions.Call(pipes.getChildren(), function(pipe) {
+                if (pipe.body) {
+                    pipe.body.setVelocityX(-200);
+                }
+            });
+        }
+
+        function hitPipe() {
+            this.physics.pause();
+            bird.setTint(0xff0000);
+            restartButton.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
