@@ -138,10 +138,10 @@
 
         function addPipePair() {
             const gap = Phaser.Math.Between(150, window.innerHeight - 150);
-            const gapSize = 270;//180;
+            const gapSize = 270;
 
             // Add top pipe
-            const topPipe = pipes.create(window.innerWidth, gap - gapSize / 2, 'pipeTop');
+            const topPipe = pipes.create(window.innerWidth, gap - gapSize / 2, 'pipeTop').setScale(0.8);
             topPipe.setOrigin(0, 1);
             topPipe.body.immovable = true;
             topPipe.body.allowGravity = false;
@@ -150,8 +150,8 @@
 
             // Add top pipe body extending to the top of the screen
             const topPipeBodyHeight = gap - gapSize / 2;
-            for (let i = topPipeBodyHeight - 250; i > 0; i -= 250) {
-                const pipeBody = pipes.create(window.innerWidth, i, 'pipeBody');
+            for (let i = topPipeBodyHeight - 150; i > 0; i -= 150) {
+                const pipeBody = pipes.create(window.innerWidth, i, 'pipeBody').setScale(0.8);
                 pipeBody.setOrigin(0, 1);
                 pipeBody.body.immovable = true;
                 pipeBody.body.allowGravity = false;
@@ -160,7 +160,7 @@
             }
 
             // Add bottom pipe
-            const bottomPipe = pipes.create(window.innerWidth, gap + gapSize / 2, 'pipeBottom');
+            const bottomPipe = pipes.create(window.innerWidth, gap + gapSize / 2, 'pipeBottom').setScale(0.8);
             bottomPipe.setOrigin(0, 0);
             bottomPipe.body.immovable = true;
             bottomPipe.body.allowGravity = false;
@@ -169,9 +169,9 @@
             bottomPipe.scored = false;
 
             // Add bottom pipe body extending to the bottom of the screen
-            const bottomPipeBodyStart = gap + gapSize / 2 + 250;
-            for (let i = bottomPipeBodyStart; i < window.innerHeight; i += 250) {
-                const pipeBody = pipes.create(window.innerWidth, i, 'pipeBody');
+            const bottomPipeBodyStart = gap + gapSize / 2 + 150;
+            for (let i = bottomPipeBodyStart; i < window.innerHeight; i += 150) {
+                const pipeBody = pipes.create(window.innerWidth, i, 'pipeBody').setScale(0.8);
                 pipeBody.setOrigin(0, 0);
                 pipeBody.body.immovable = true;
                 pipeBody.body.allowGravity = false;
