@@ -75,6 +75,7 @@
         });
 
         function preload() {
+            this.load.audio('backgroundMusic', 'assets/background_music.mp3');
             // Load assets
             this.load.image('background', 'assets/background.png');
             this.load.image('bird', 'assets/blimp1.png');
@@ -84,6 +85,9 @@
         }
 
         function create() {
+            // Add background music
+            let music = this.sound.add('backgroundMusic');
+            music.play({ loop: true });
             // Add background
             this.add.image(window.innerWidth / 2, window.innerHeight / 2, 'background').setDisplaySize(window.innerWidth, window.innerHeight);
 
