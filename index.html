@@ -140,7 +140,7 @@
             }
 
             flap() {
-                this.bird.setVelocityY(-400);
+                this.bird.setVelocityY(-300);
                 this.bird.angle = -20;
             }
 
@@ -211,8 +211,8 @@
             physics: {
                 default: 'arcade',
                 arcade: {
-                    gravity: { y: 500 },
-                    debug: true
+                    gravity: { y: 600 },
+                    debug: false
                 }
             },
             scene: [StartScene, GameScene],
