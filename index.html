@@ -40,7 +40,170 @@
         <button id="restart-button">NEU STARTEN</button>
     </div>
     <script>
-        // JavaScript Code for Flappy Bird Game in Phaser 3
+        // JavaScript-Code für das Flappy Bird-Spiel mit Startbildschirm
+
+        class StartScene extends Phaser.Scene {
+            constructor() {
+                super({ key: 'StartScene' });
+            }
+
+            preload() {
+                this.load.image('startImage', 'assets/start_screen.png'); // Füge dein Startbild hinzu
+            }
+
+            create() {
+                let startImage = this.add.image(
+                    this.scale.width / 2,
+                    this.scale.height / 2,
+                    'startImage'
+                ).setDisplaySize(this.scale.width, this.scale.height);
+
+                startImage.setInteractive();
+
+                startImage.on('pointerdown', () => {
+                    this.scene.start('GameScene');
+                });
+            }
+        }
+
+        class GameScene extends Phaser.Scene {
+            constructor() {
+                super({ key: 'GameScene' });
+            }
+
+            preload() {
+                this.load.audio('backgroundMusic', 'assets/background_music.mp3');
+                // Lade die Spiel-Assets
+                this.load.image('background', 'assets/background.png');
+                this.load.image('bird', 'assets/blimp1.png');
+                this.load.image('pipeTop', 'assets/pipe_bottom.png');
+                this.load.image('pipeBottom', 'assets/pipe_top.png');
+                this.load.image('pipeBody', 'assets/pipe_body.png');
+            }
+
+            create() {
+                // Hintergrundmusik
+                this.music = this.sound.add('backgroundMusic');
+                this.music.play({ loop: true });
+                // Hintergrundbild
+                this.add.image(
+                    this.scale.width / 2,
+                    this.scale.height / 2,
+                    'background'
+                ).setDisplaySize(this.scale.width, this.scale.height);
+
+                // Vogel
+                this.bird = this.physics.add.sprite(150, this.scale.height / 2, 'bird').setScale(0.8);
+                this.bird.setCollideWorldBounds(true);
+                this.bird.body.setSize(this.bird.width * 0.7, this.bird.height * 0.7);
+
+                // Rohre
+                this.pipes = this.physics.add.group();
+
+                // Punktestand
+                this.score = 0;
+                this.scoreText = this.add.text(16, 16, 'Score: 0', {
+                    fontSize: '32px',
+                    fill: '#fff'
+                }).setDepth(1);
+
+                // Steuerung
+                this.input.on('pointerdown', this.flap, this);
+
+                // Rohrgenerator
+                this.time.addEvent({
+                    delay: 2500,
+                    callback: this.addPipePair,
+                    callbackScope: this,
+                    loop: true
+                });
+
+                // Kollisionserkennung
+                this.physics.add.collider(this.bird, this.pipes, this.hitPipe, null, this);
+            }
+
+            update() {
+                if (this.bird.angle < 20) {
+                    this.bird.angle += 1;
+                }
+
+                // Punktestand aktualisieren
+                this.pipes.getChildren().forEach(function(pipe) {
+                    if (!pipe.scored && pipe.x + pipe.width < this.bird.x) {
+                        pipe.scored = true;
+                        if (pipe.isBottom) {
+                            this.score += 1;
+                            this.scoreText.setText('Score: ' + this.score);
+                        }
+                    }
+                }, this);
+            }
+
+            flap() {
+                this.bird.setVelocityY(-300);
+                this.bird.angle = -20;
+            }
+
+            addPipePair() {
+                const gap = Phaser.Math.Between(150, this.scale.height - 150);
+                const gapSize = 270;
+
+                // Oberes Rohr
+                const topPipe = this.pipes.create(this.scale.width, gap - gapSize / 2, 'pipeTop').setScale(0.8);
+                topPipe.setOrigin(0, 1);
+                topPipe.body.immovable = true;
+                topPipe.body.allowGravity = false;
+                topPipe.isBottom = false;
+                topPipe.body.setSize(topPipe.width * 0.5, topPipe.height * 0.5, true);
+
+                // Oberer Rohrkörper bis zum oberen Bildschirmrand
+                const topPipeBodyHeight = gap - gapSize / 2;
+                for (let i = topPipeBodyHeight - 150; i > 0; i -= 150) {
+                    const pipeBody = this.pipes.create(this.scale.width, i, 'pipeBody').setScale(0.8);
+                    pipeBody.setOrigin(0, 1);
+                    pipeBody.body.immovable = true;
+                    pipeBody.body.allowGravity = false;
+                    pipeBody.isBottom = false;
+                    pipeBody.body.setSize(pipeBody.width * 0.5, pipeBody.height * 0.5, true);
+                }
+
+                // Unteres Rohr
+                const bottomPipe = this.pipes.create(this.scale.width, gap + gapSize / 2, 'pipeBottom').setScale(0.8);
+                bottomPipe.setOrigin(0, 0);
+                bottomPipe.body.immovable = true;
+                bottomPipe.body.allowGravity = false;
+                bottomPipe.isBottom = true;
+                bottomPipe.body.setSize(bottomPipe.width * 0.5, bottomPipe.height * 0.5, true);
+                bottomPipe.scored = false;
+
+                // Unterer Rohrkörper bis zum unteren Bildschirmrand
+                const bottomPipeBodyStart = gap + gapSize / 2 + 150;
+                for (let i = bottomPipeBodyStart; i < this.scale.height; i += 150) {
+                    const pipeBody = this.pipes.create(this.scale.width, i, 'pipeBody').setScale(0.8);
+                    pipeBody.setOrigin(0, 0);
+                    pipeBody.body.immovable = true;
+                    pipeBody.body.allowGravity = false;
+                    pipeBody.isBottom = true;
+                    pipeBody.body.setSize(pipeBody.width * 0.5, pipeBody.height * 0.5, true);
+                }
+
+                // Rohre nach links bewegen
+                this.pipes.getChildren().forEach(function(pipe) {
+                    if (pipe.body) {
+                        pipe.body.setVelocityX(-200);
+                    }
+                });
+            }
+
+            hitPipe() {
+                this.music.stop();
+                this.physics.pause();
+                this.bird.setTint(0xff0000);
+                restartButton.style.display = 'block';
+            }
+        }
+
+        // Phaser-Konfiguration
         const config = {
             type: Phaser.AUTO,
             width: window.innerWidth,
@@ -52,154 +215,19 @@
                     debug: true
                 }
             },
-            scene: {
-                preload: preload,
-                create: create,
-                update: update
-            },
+            scene: [StartScene, GameScene],
             parent: 'game-container'
         };
 
         const game = new Phaser.Game(config);
 
-        let bird;
-        let pipes;
-        let score = 0;
-        let scoreText;
+        // Neustart-Button
         let restartButton = document.getElementById('restart-button');
 
         restartButton.addEventListener('click', () => {
-            score = 0;
             restartButton.style.display = 'none';
-            game.scene.getScene('default').scene.restart();
-            score = 0;
-            restartButton.style.display = 'none';
+            game.scene.getScene('GameScene').scene.restart();
         });
-
-        function preload() {
-            this.load.audio('backgroundMusic', 'assets/background_music.mp3');
-            // Load assets
-            this.load.image('background', 'assets/background.png');
-            this.load.image('bird', 'assets/blimp1.png');
-            this.load.image('pipeTop', 'assets/pipe_bottom.png'); // Different image for top pipe
-            this.load.image('pipeBottom', 'assets/pipe_top.png'); // Different image for bottom pipe
-            this.load.image('pipeBody', 'assets/pipe_body.png'); // Pipe body image
-        }
-
-        function create() {
-            // Add background music
-            this.music = this.sound.add('backgroundMusic');
-            this.music.play({ loop: true });
-            // Add background
-            this.add.image(window.innerWidth / 2, window.innerHeight / 2, 'background').setDisplaySize(window.innerWidth, window.innerHeight);
-
-            // Add bird
-            bird = this.physics.add.sprite(150, window.innerHeight / 2, 'bird').setScale(0.8);
-            bird.setCollideWorldBounds(true);
-            bird.body.setSize(bird.width * 0.7, bird.height * 0.7); // Reduce collider size
-
-            // Add pipes group
-            pipes = this.physics.add.group();
-
-            // Add score text (always on top)
-            scoreText = this.add.text(16, 16, 'Score: 0', { fontSize: '32px', fill: '#fff' }).setDepth(1);
-
-            // Add controls
-            this.input.on('pointerdown', flap);
-
-            // Add pipe generator
-            this.time.addEvent({
-                delay: 2500,
-                callback: addPipePair,
-                callbackScope: this,
-                loop: true
-            });
-
-            // Bird collision with pipes
-            this.physics.add.collider(bird, pipes, hitPipe, null, this);
-        }
-
-        function update() {
-            // Rotate bird slightly downward
-            if (bird.angle < 20) {
-                bird.angle += 1;
-            }
-
-            // Check if bird has passed a pipe pair and update score
-            pipes.getChildren().forEach(function(pipe) {
-                if (!pipe.scored && pipe.x + pipe.width < bird.x) {
-                    pipe.scored = true;
-                    if (pipe.isBottom) {
-                        score += 1;
-                        scoreText.setText('Score: ' + score);
-                    }
-                }
-            });
-        }
-
-        function flap() {
-            bird.setVelocityY(-300);
-            bird.angle = -20;
-        }
-
-        function addPipePair() {
-            const gap = Phaser.Math.Between(150, window.innerHeight - 150);
-            const gapSize = 270;
-
-            // Add top pipe
-            const topPipe = pipes.create(window.innerWidth, gap - gapSize / 2, 'pipeTop').setScale(0.8);
-            topPipe.setOrigin(0, 1);
-            topPipe.body.immovable = true;
-            topPipe.body.allowGravity = false;
-            topPipe.isBottom = false;
-            topPipe.body.setSize(topPipe.width * 0.5, topPipe.height * 0.5, true); // Reduce collider size
-
-            // Add top pipe body extending to the top of the screen
-            const topPipeBodyHeight = gap - gapSize / 2;
-            for (let i = topPipeBodyHeight - 150; i > 0; i -= 150) {
-                const pipeBody = pipes.create(window.innerWidth, i, 'pipeBody').setScale(0.8);
-                pipeBody.setOrigin(0, 1);
-                pipeBody.body.immovable = true;
-                pipeBody.body.allowGravity = false;
-                pipeBody.isBottom = false;
-                pipeBody.body.setSize(pipeBody.width * 0.5, pipeBody.height * 0.5, true); // Reduce collider size
-            }
-
-            // Add bottom pipe
-            const bottomPipe = pipes.create(window.innerWidth, gap + gapSize / 2, 'pipeBottom').setScale(0.8);
-            bottomPipe.setOrigin(0, 0);
-            bottomPipe.body.immovable = true;
-            bottomPipe.body.allowGravity = false;
-            bottomPipe.isBottom = true;
-            bottomPipe.body.setSize(bottomPipe.width * 0.5, bottomPipe.height * 0.5, true); // Reduce collider size
-            bottomPipe.scored = false;
-
-            // Add bottom pipe body extending to the bottom of the screen
-            const bottomPipeBodyStart = gap + gapSize / 2 + 150;
-            for (let i = bottomPipeBodyStart; i < window.innerHeight; i += 150) {
-                const pipeBody = pipes.create(window.innerWidth, i, 'pipeBody').setScale(0.8);
-                pipeBody.setOrigin(0, 0);
-                pipeBody.body.immovable = true;
-                pipeBody.body.allowGravity = false;
-                pipeBody.isBottom = true;
-                pipeBody.body.setSize(pipeBody.width * 0.5, pipeBody.height * 0.5, true); // Reduce collider size
-            }
-
-            // Move pipes to the left
-            Phaser.Actions.Call(pipes.getChildren(), function(pipe) {
-                if (pipe.body) {
-                    pipe.body.setVelocityX(-200);
-                }
-            });
-        }
-
-        function hitPipe() {
-            this.music.stop();
-            this.physics.pause();
-            restartButton.style.display = 'block';
-            bird.setTint(0xff0000);
-            restartButton.style.display = 'block';
-        }
     </script>
 </body>
 </html>
