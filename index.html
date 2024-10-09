@@ -27,7 +27,7 @@
             transform: translate(-50%, -50%);
             padding: 10px 20px;
             font-size: 24px;
-            background-color: #ff0000;
+            background-color: #000000;
             color: #fff;
             border: none;
             cursor: pointer;
@@ -37,7 +37,7 @@
 </head>
 <body>
     <div id="game-container">
-        <button id="restart-button">Neu Start</button>
+        <button id="restart-button">NEU STARTEN</button>
     </div>
     <script>
         // JavaScript Code for Flappy Bird Game in Phaser 3
@@ -69,7 +69,9 @@
         let restartButton = document.getElementById('restart-button');
 
         restartButton.addEventListener('click', () => {
-            game.scene.stop('default'); game.scene.start('default');
+            score = 0;
+            restartButton.style.display = 'none';
+            game.scene.getScene('default').scene.restart();
             score = 0;
             restartButton.style.display = 'none';
         });
@@ -86,8 +88,8 @@
 
         function create() {
             // Add background music
-            let music = this.sound.add('backgroundMusic');
-            music.play({ loop: true });
+            this.music = this.sound.add('backgroundMusic');
+            this.music.play({ loop: true });
             // Add background
             this.add.image(window.innerWidth / 2, window.innerHeight / 2, 'background').setDisplaySize(window.innerWidth, window.innerHeight);
 
@@ -192,7 +194,9 @@
         }
 
         function hitPipe() {
+            this.music.stop();
             this.physics.pause();
+            restartButton.style.display = 'block';
             bird.setTint(0xff0000);
             restartButton.style.display = 'block';
         }
