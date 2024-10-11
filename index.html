@@ -170,7 +170,7 @@
                             this.scoreText.setText('Score: ' + this.score);
 
                             // Überprüfen, ob der Score 0 erreicht hat
-                         if (this.score <= 90) {
+                         if (this.score <= 0) {
                         this.physics.pause();
                         this.bird.setTint(0xff0000);  // Vogel rot einfärben
                         this.showGameOverMessage();  // Spielende-Nachricht anzeigen
@@ -237,6 +237,8 @@
             }
 
             showGameOverMessage() {
+                this.music.stop();
+                this.physics.pause();
     // Zufälligen Witz auswählen
     let randomJoke = this.jokes[Math.floor(Math.random() * this.jokes.length)];
 
@@ -250,6 +252,11 @@
                 this.music.stop();
                 this.physics.pause();
                 this.bird.setTint(0xff0000);
+
+                    // Witz und Neustart-Button anzeigen
+                this.jokeTextElement.textContent = 'Oh nein! Es fehlen noch ' + this.score + ' Punkte bis zum Gewinn :)';
+                this.jokeTextElement.style.display = 'block';
+                restartButton.style.display = 'block';
 
                 // Zufälligen Witz auswählen
                 //let randomJoke = this.jokes[Math.floor(Math.random() * this.jokes.length)];
@@ -272,7 +279,7 @@
                 default: 'arcade',
                 arcade: {
                     gravity: { y: 900 },
-                    debug: true
+                    debug: false
                 }
             },
             scene: [StartScene, GameScene],
