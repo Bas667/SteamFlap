@@ -22,7 +22,7 @@
         }
         #restart-button {
             position: absolute;
-            top: 50%;
+            top: 60%;
             left: 50%;
             transform: translate(-50%, -50%);
             padding: 10px 20px;
@@ -32,15 +32,32 @@
             border: none;
             cursor: pointer;
             display: none;
+            z-index: 2;
+        }
+        #joke-text {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            text-align: center;
+            font-size: 24px;
+            color: #fff;
+            background-color: rgba(0, 0, 0, 0.7); /* Schwarzer, transparenter Hintergrund */
+            padding: 20px; /* Innenabstand */
+            border-radius: 10px; /* Abgerundete Ecken */
+            display: none;
+            z-index: 2;
         }
     </style>
 </head>
 <body>
     <div id="game-container">
+        <div id="joke-text"></div>
         <button id="restart-button">NEU STARTEN</button>
     </div>
     <script>
-        // JavaScript-Code für das Flappy Bird-Spiel mit Startbildschirm
+        // JavaScript-Code für das Flappy Bird-Spiel mit Witzen nach dem Spielende
 
         class StartScene extends Phaser.Scene {
             constructor() {
@@ -48,7 +65,7 @@
             }
 
             preload() {
-                this.load.image('startImage', 'assets/start_screen.png'); // Füge dein Startbild hinzu
+                this.load.image('startImage', 'assets/start_screen2.png'); // Füge dein Startbild hinzu
             }
 
             create() {
@@ -93,7 +110,7 @@
                 ).setDisplaySize(this.scale.width, this.scale.height);
 
                 // Vogel
-                this.bird = this.physics.add.sprite(150, this.scale.height / 2, 'bird').setScale(0.8);
+                this.bird = this.physics.add.sprite(150, this.scale.height / 2, 'bird').setScale(0.6);
                 this.bird.setCollideWorldBounds(true);
                 this.bird.body.setSize(this.bird.width * 0.7, this.bird.height * 0.7);
 
@@ -101,8 +118,8 @@
                 this.pipes = this.physics.add.group();
 
                 // Punktestand
-                this.score = 0;
-                this.scoreText = this.add.text(16, 16, 'Score: 0', {
+                this.score = 100;
+                this.scoreText = this.add.text(16, 16, 'Score: 100', {
                     fontSize: '32px',
                     fill: '#fff'
                 }).setDepth(1);
@@ -112,7 +129,7 @@
 
                 // Rohrgenerator
                 this.time.addEvent({
-                    delay: 2500,
+                    delay: 2300,
                     callback: this.addPipePair,
                     callbackScope: this,
                     loop: true
@@ -120,6 +137,23 @@
 
                 // Kollisionserkennung
                 this.physics.add.collider(this.bird, this.pipes, this.hitPipe, null, this);
+
+                // Witzliste
+                this.jokes = [
+                    "Warum können Seeräuber keinen Kreis berechnen? Weil sie Pi raten!",
+                    "Was macht ein Pirat am Computer? Er drückt die Enter-Taste!",
+                    "Warum können Geometer gut tanzen? Sie haben immer den richtigen Dreh!",
+                    "Was ist groß, grau und kann telefonieren? Ein Telefant!",
+                    "Warum können Mathematiker gut backen? Sie kennen die perfekten Maße!",
+                    "Wie nennt man eine schlanke Pythagoras? Ein Hypotänüschen!",
+                    "Was sagt die 0 zur 8? Schöner Gürtel!",
+                    "Warum gehen Mathematiker ungern in den Wald? Zu viele Wurzeln!",
+                    "Was macht ein Elektron im Fitnessstudio? Es lädt sich auf!",
+                    "Warum lieben Programmierer die Natur? Weil sie viele Bugs hat!"
+                ];
+
+                // Witz-Element referenzieren
+                this.jokeTextElement = document.getElementById('joke-text');
             }
 
             update() {
@@ -132,8 +166,15 @@
                     if (!pipe.scored && pipe.x + pipe.width < this.bird.x) {
                         pipe.scored = true;
                         if (pipe.isBottom) {
-                            this.score += 1;
+                            this.score -= 1;
                             this.scoreText.setText('Score: ' + this.score);
+
+                            // Überprüfen, ob der Score 0 erreicht hat
+                         if (this.score <= 90) {
+                        this.physics.pause();
+                        this.bird.setTint(0xff0000);  // Vogel rot einfärben
+                        this.showGameOverMessage();  // Spielende-Nachricht anzeigen
+                         }
                         }
                     }
                 }, this);
@@ -145,46 +186,46 @@
             }
 
             addPipePair() {
-                const gap = Phaser.Math.Between(150, this.scale.height - 150);
-                const gapSize = 270;
+                const gap = Phaser.Math.Between(250, this.scale.height - 250);
+                const gapSize = Phaser.Math.Between(180,250);
 
                 // Oberes Rohr
-                const topPipe = this.pipes.create(this.scale.width, gap - gapSize / 2, 'pipeTop').setScale(0.8);
+                const topPipe = this.pipes.create(this.scale.width, gap - gapSize / 2, 'pipeTop').setScale(0.7);
                 topPipe.setOrigin(0, 1);
                 topPipe.body.immovable = true;
                 topPipe.body.allowGravity = false;
                 topPipe.isBottom = false;
-                topPipe.body.setSize(topPipe.width * 0.5, topPipe.height * 0.5, true);
+                topPipe.body.setSize(topPipe.width * 0.5, topPipe.height * 0.85, true);
 
                 // Oberer Rohrkörper bis zum oberen Bildschirmrand
                 const topPipeBodyHeight = gap - gapSize / 2;
                 for (let i = topPipeBodyHeight - 150; i > 0; i -= 150) {
-                    const pipeBody = this.pipes.create(this.scale.width, i, 'pipeBody').setScale(0.8);
+                    const pipeBody = this.pipes.create(this.scale.width, i, 'pipeBody').setScale(0.7);
                     pipeBody.setOrigin(0, 1);
                     pipeBody.body.immovable = true;
                     pipeBody.body.allowGravity = false;
                     pipeBody.isBottom = false;
-                    pipeBody.body.setSize(pipeBody.width * 0.5, pipeBody.height * 0.5, true);
+                    pipeBody.body.setSize(pipeBody.width * 0.6, pipeBody.height * 0.8, true);
                 }
 
                 // Unteres Rohr
-                const bottomPipe = this.pipes.create(this.scale.width, gap + gapSize / 2, 'pipeBottom').setScale(0.8);
+                const bottomPipe = this.pipes.create(this.scale.width, gap + gapSize / 2, 'pipeBottom').setScale(0.7);
                 bottomPipe.setOrigin(0, 0);
                 bottomPipe.body.immovable = true;
                 bottomPipe.body.allowGravity = false;
                 bottomPipe.isBottom = true;
-                bottomPipe.body.setSize(bottomPipe.width * 0.5, bottomPipe.height * 0.5, true);
+                bottomPipe.body.setSize(bottomPipe.width * 0.5, bottomPipe.height * 0.85, true);
                 bottomPipe.scored = false;
 
                 // Unterer Rohrkörper bis zum unteren Bildschirmrand
                 const bottomPipeBodyStart = gap + gapSize / 2 + 150;
                 for (let i = bottomPipeBodyStart; i < this.scale.height; i += 150) {
-                    const pipeBody = this.pipes.create(this.scale.width, i, 'pipeBody').setScale(0.8);
+                    const pipeBody = this.pipes.create(this.scale.width, i, 'pipeBody').setScale(0.7);
                     pipeBody.setOrigin(0, 0);
                     pipeBody.body.immovable = true;
                     pipeBody.body.allowGravity = false;
                     pipeBody.isBottom = true;
-                    pipeBody.body.setSize(pipeBody.width * 0.5, pipeBody.height * 0.5, true);
+                    pipeBody.body.setSize(pipeBody.width * 0.6, pipeBody.height * 0.9, true);
                 }
 
                 // Rohre nach links bewegen
@@ -195,10 +236,29 @@
                 });
             }
 
+            showGameOverMessage() {
+    // Zufälligen Witz auswählen
+    let randomJoke = this.jokes[Math.floor(Math.random() * this.jokes.length)];
+
+    // Witz und Neustart-Button anzeigen
+    this.jokeTextElement.textContent = '****HERZLICHEN GLÜCKWUNSCH**** \n\n Der Code lautet: XXXX';
+    this.jokeTextElement.style.display = 'block';
+    restartButton.style.display = 'block';
+}
+
             hitPipe() {
                 this.music.stop();
                 this.physics.pause();
                 this.bird.setTint(0xff0000);
+
+                // Zufälligen Witz auswählen
+                //let randomJoke = this.jokes[Math.floor(Math.random() * this.jokes.length)];
+
+                // Witz anzeigen
+                //this.jokeTextElement.textContent = "Leider verloren! Hier ist ein lustiger Witz um dich aufzuheitern:\n" + randomJoke;
+                //this.jokeTextElement.style.display = 'block';
+
+                // Neustart-Button anzeigen
                 restartButton.style.display = 'block';
             }
         }
@@ -211,8 +271,8 @@
             physics: {
                 default: 'arcade',
                 arcade: {
-                    gravity: { y: 600 },
-                    debug: false
+                    gravity: { y: 900 },
+                    debug: true
                 }
             },
             scene: [StartScene, GameScene],
@@ -226,6 +286,7 @@
 
         restartButton.addEventListener('click', () => {
             restartButton.style.display = 'none';
+            document.getElementById('joke-text').style.display = 'none';
             game.scene.getScene('GameScene').scene.restart();
         });
     </script>
